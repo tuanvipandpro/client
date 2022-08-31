@@ -8,6 +8,7 @@
           :username="userbox.name"
           :last-message="userbox.lastMessage"
           :chatting="userbox.isChatting"
+          :hidden-badge="!userbox.newChat"
           @click="chooseMsgBox(userbox)"
         />
       </el-aside>
@@ -16,7 +17,9 @@
           <template #header>
             <div style="display: flex; align-items: center">
               <el-avatar :size="28" icon="Avatar" />
-              <strong style="margin-left: 6px">{{ toUser.name || 'None'}}</strong>
+              <strong style="margin-left: 6px">{{
+                toUser.name || "None"
+              }}</strong>
             </div>
           </template>
           <div style="height: 74vh; overflow-y: auto">
@@ -69,14 +72,14 @@ export default {
 
     const route = useRoute();
 
-    const user = JSON.parse(sessionStorage.getItem('user'));
-    const toUser = ref({})
-    // const roomId = ref(0)
+    const user = JSON.parse(sessionStorage.getItem("user"));
+    const toUser = ref({});
+    const loading = ref(true);
     const userBoard = ref([]);
     const msgBoard = ref([]);
     const chatData = ref("");
 
-    let initFlg = false
+    let initFlg = false;
 
     const checkTimestamp = (a, b) => {
       if (a.data().createdAt > b.data().createdAt) {
@@ -110,12 +113,13 @@ export default {
     };
 
     const sendMsg = async () => {
-      chatData.value = "";
       try {
+        const chatMsg = chatData.value;
+        chatData.value = "";
         const res = await addDoc(collection(db, "chats"), {
           createdAt: new Date(),
           roomId: toUser.value.roomId,
-          text: chatData.value,
+          text: chatMsg,
           user: {
             _id: user.email,
             name: user.name,
@@ -125,6 +129,8 @@ export default {
       } catch (err) {
         console.log(err);
         ElMessage.error("Can't send your msg");
+      } finally {
+        chatData.value = "";
       }
     };
 
@@ -133,11 +139,14 @@ export default {
     };
 
     const chooseMsgBox = async (userbox) => {
-      toUser.value = userbox
+      toUser.value = userbox;
       userBoard.value.map((userMsg) => {
-        userMsg.isChatting = userbox.studentId === userMsg.userId;
+        userMsg.isChatting = userbox.studentId === userMsg.studentId;
+        userMsg.newChat = false;
         return userMsg;
       });
+      await getMsgBoardByRoomId();
+      chatData.value = "";
     };
 
     const getRoomByConnectorId = async () => {
@@ -151,42 +160,55 @@ export default {
             Authorization: `Bearer ${user.token}`,
           },
         }
-      )
-      return res.data
-    }
+      );
+      return res.data;
+    };
 
     const init = async () => {
-      const res = await getRoomByConnectorId()
+      const res = await getRoomByConnectorId();
       // roomId.value = res.data[0].roomId;
-      toUser.value = res.data[0]
-      userBoard.value = res.data
-      userBoard.value[0].isChatting = true
+      toUser.value = res.data[0];
+      userBoard.value = res.data.map(e => {
+        return {
+          ...e,
+          newChat: false,
+          isChatting: false,
+        }
+      });
+      console.log(userBoard.value)
+      userBoard.value[0].isChatting = true;
       // const q = query(collection(db, COLLECTION),where("roomId", "==", toUser.value.roomId));
-      onSnapshot(query(collection(db, COLLECTION),where("roomId", "==", toUser.value.roomId)), (snapshot) => {
+      onSnapshot(query(collection(db, COLLECTION)), (snapshot) => {
         snapshot.docChanges().forEach((change) => {
           if (change.type === "added" && initFlg) {
-            if (!msgBoard.value.find(e => e.id === change.doc.id)) {
-              msgBoard.value.push({
-                id: change.doc.id,
-                isYou: change.doc.data().user._id === user.email,
-                username: change.doc.data().user.name,
-                avatar: change.doc.data().user.avatar,
-                message: change.doc.data().text,
-                createdAt: change.doc.data().createdAt.toDate(),
-                roomId: change.doc.data().roomId,
-              })
+            if (toUser.value.roomId === change.doc.data().roomId) {
+              if (!msgBoard.value.find((e) => e.id === change.doc.id)) {
+                msgBoard.value.push({
+                  id: change.doc.id,
+                  isYou: change.doc.data().user._id === user.email,
+                  username: change.doc.data().user.name,
+                  avatar: change.doc.data().user.avatar,
+                  message: change.doc.data().text,
+                  createdAt: change.doc.data().createdAt.toDate(),
+                  roomId: change.doc.data().roomId,
+                });
+              }
+            } else {
+              userBoard.value[userBoard.value.findIndex(e => e.roomId === change.doc.data().roomId)].newChat = true
             }
           }
           if (change.type === "modified") {
             console.log("Modified: ", change.doc.data());
           }
           if (change.type === "removed") {
-            msgBoard.value = msgBoard.value.filter(item => item.id !== change.doc.id)
+            msgBoard.value = msgBoard.value.filter(
+              (item) => item.id !== change.doc.id
+            );
           }
         });
       });
-      await getMsgBoardByRoomId()
-      initFlg = true
+      await getMsgBoardByRoomId();
+      initFlg = true;
     };
 
     onBeforeMount(async () => {
