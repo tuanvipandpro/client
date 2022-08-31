@@ -44,7 +44,8 @@ const googleLogin = async () => {
       idToken: await res.user.getIdToken(true)
     }
 
-    if (useUserStore().login(userObj)) {
+    const loginRes = await useUserStore().login(userObj)
+    if (loginRes) {
       router.push({name: 'Home'})
     } else {
       ElMessage.error('The user is invalid !!!')

@@ -5,7 +5,7 @@
         <Userbox
           v-for="(userbox, i) in userBoard"
           :key="i"
-          :username="userbox.username"
+          :username="userbox.name"
           :last-message="userbox.lastMessage"
           :chatting="userbox.isChatting"
           @click="chooseMsgBox(userbox)"
@@ -110,6 +110,7 @@ export default {
     };
 
     const sendMsg = async () => {
+      chatData.value = "";
       try {
         const res = await addDoc(collection(db, "chats"), {
           createdAt: new Date(),
@@ -124,8 +125,6 @@ export default {
       } catch (err) {
         console.log(err);
         ElMessage.error("Can't send your msg");
-      } finally {
-        chatData.value = "";
       }
     };
 
