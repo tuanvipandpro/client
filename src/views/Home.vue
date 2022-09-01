@@ -1,6 +1,6 @@
 <template>
   <div class="common-layout max-height">
-    <el-container>
+    <el-container v-loading="containerLoading">
       <el-aside class="max-height userboard">
         <Userbox
           v-for="(userbox, i) in userBoard"
@@ -9,6 +9,7 @@
           :last-message="userbox.lastMessage"
           :chatting="userbox.isChatting"
           :hidden-badge="!userbox.newChat"
+          :avatar="userbox.imagePath"
           @click="chooseMsgBox(userbox)"
         />
       </el-aside>
@@ -16,13 +17,14 @@
         <el-card shadow="never">
           <template #header>
             <div style="display: flex; align-items: center">
-              <el-avatar :size="28" icon="Avatar" />
+              <el-avatar v-if="toUser.imagePath" :src="toUser.imagePath"/>
+              <el-avatar v-else :size="30" icon="Avatar" />
               <strong style="margin-left: 6px">{{
                 toUser.name || "None"
               }}</strong>
             </div>
           </template>
-          <div style="height: 74vh; overflow-y: auto">
+          <div ref="scrollbox" style="height: 74vh; overflow-y: auto">
             <template v-for="(msg, index) in msgBoard" :key="index">
               <div v-if="!msg.isYou" class="msgbox">{{ msg.message }}</div>
               <div v-else class="msgbox isRight">{{ msg.message }}</div>
@@ -37,7 +39,7 @@
             placeholder="Please input ..."
           >
             <template #prepend>
-              <el-button icon="Position" @click="sendMsg" />
+              <el-button icon="Position" @click="sendMsg" :loading="loading"/>
             </template>
           </el-input>
         </div>
@@ -46,7 +48,7 @@
   </div>
 </template>
 <script>
-import { ref, onBeforeMount } from "vue";
+import { ref, onBeforeMount, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "../stores/user";
@@ -74,10 +76,12 @@ export default {
 
     const user = JSON.parse(sessionStorage.getItem("user"));
     const toUser = ref({});
-    const loading = ref(true);
     const userBoard = ref([]);
     const msgBoard = ref([]);
     const chatData = ref("");
+    const loading = ref(false)
+    const containerLoading = ref(true)
+    const scrollbox = ref(null)
 
     let initFlg = false;
 
@@ -113,9 +117,10 @@ export default {
     };
 
     const sendMsg = async () => {
+      loading.value = true
       try {
         const chatMsg = chatData.value;
-        chatData.value = "";
+        // chatData.value = "";
         const res = await addDoc(collection(db, "chats"), {
           createdAt: new Date(),
           roomId: toUser.value.roomId,
@@ -126,11 +131,13 @@ export default {
             avatar: user.avatar,
           },
         });
+        scrollbox.value.scrollTop = scrollbox.value.scrollHeight
       } catch (err) {
         console.log(err);
         ElMessage.error("Can't send your msg");
       } finally {
         chatData.value = "";
+        loading.value = false
       }
     };
 
@@ -139,6 +146,7 @@ export default {
     };
 
     const chooseMsgBox = async (userbox) => {
+      containerLoading.value = true
       toUser.value = userbox;
       userBoard.value.map((userMsg) => {
         userMsg.isChatting = userbox.studentId === userMsg.studentId;
@@ -147,6 +155,7 @@ export default {
       });
       await getMsgBoardByRoomId();
       chatData.value = "";
+      containerLoading.value = false
     };
 
     const getRoomByConnectorId = async () => {
@@ -175,7 +184,6 @@ export default {
           isChatting: false,
         }
       });
-      console.log(userBoard.value)
       userBoard.value[0].isChatting = true;
       // const q = query(collection(db, COLLECTION),where("roomId", "==", toUser.value.roomId));
       onSnapshot(query(collection(db, COLLECTION)), (snapshot) => {
@@ -192,6 +200,7 @@ export default {
                   createdAt: change.doc.data().createdAt.toDate(),
                   roomId: change.doc.data().roomId,
                 });
+                
               }
             } else {
               userBoard.value[userBoard.value.findIndex(e => e.roomId === change.doc.data().roomId)].newChat = true
@@ -211,15 +220,19 @@ export default {
       initFlg = true;
     };
 
-    onBeforeMount(async () => {
+    onMounted(async () => {
       await init();
+      containerLoading.value = false
     });
-
+    
     return {
       chatData,
       msgBoard,
       userBoard,
       toUser,
+      loading,
+      scrollbox,
+      containerLoading,
       sendMsg,
       handleEnter,
       chooseMsgBox,
