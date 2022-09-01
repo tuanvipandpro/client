@@ -49,7 +49,7 @@
 </template>
 <script>
 import { ref, onBeforeMount, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { useUserStore } from "../stores/user";
 import { db } from "../../firebase";
@@ -72,7 +72,7 @@ export default {
   setup() {
     const COLLECTION = "chats";
 
-    const route = useRoute();
+    const router = useRouter();
 
     const user = JSON.parse(sessionStorage.getItem("user"));
     const toUser = ref({});
@@ -221,8 +221,12 @@ export default {
     };
 
     onMounted(async () => {
-      await init();
-      containerLoading.value = false
+      if (sessionStorage.getItem('user')) {
+        await init();
+        containerLoading.value = false
+      } else {
+        router.push('/')
+      }
     });
     
     return {

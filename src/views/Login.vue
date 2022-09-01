@@ -24,6 +24,8 @@ import { Message } from '@element-plus/icons-vue';
 import { useUserStore } from '../stores/user'
 import { GoogleAuthProvider, signInWithPopup, getAuth } from 'firebase/auth'
 
+sessionStorage.removeItem('user')
+
 const username = ref('')
 const router = useRouter()
 
