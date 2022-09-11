@@ -16,17 +16,23 @@
       <el-main class="main">
         <el-card shadow="never">
           <template #header>
-            <div style="display: flex; align-items: center">
-              <el-avatar v-if="toUser.imagePath" :src="toUser.imagePath"/>
-              <el-avatar v-else :size="30" icon="Avatar" />
-              <strong style="margin-left: 6px">{{
-                toUser.name || "None"
-              }}</strong>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+              <div style="display: flex; align-items: center;">
+                <el-avatar v-if="toUser.imagePath" :src="toUser.imagePath"/>
+                <el-avatar v-else :size="30" icon="Avatar" />
+                <strong style="margin-left: 6px">{{
+                  toUser.name || "None"
+                }}</strong>
+              </div>
+              <el-button :icon="InfoFilled" text round style="font-size: 28px;"></el-button>
             </div>
           </template>
           <div ref="scrollbox" style="height: 74vh; overflow-y: auto">
             <template v-for="(msg, index) in msgBoard" :key="index">
-              <div v-if="!msg.isYou" class="msgbox">{{ msg.message }}</div>
+              <div v-if="msg.image" :class="!msg.isYou ? 'msgbox' : 'msgbox isRight' ">
+                <el-image style="width: 100px; height: 100px" :src="msg.image" :preview-src-list="[msg.imgSrc]" fit="fill" />
+              </div>
+              <div v-else-if="!msg.isYou" class="msgbox">{{ msg.message }}</div>
               <div v-else class="msgbox isRight">{{ msg.message }}</div>
             </template>
           </div>
@@ -40,6 +46,23 @@
           >
             <template #prepend>
               <el-button icon="Position" @click="sendMsg" :loading="loading"/>
+              <!-- <el-button icon="Position" @click="sendMsg" :loading="loading"/> -->
+            </template>
+            <template #append>
+              <el-upload
+                ref="upload"
+                list-type="picture"
+                accept="image/*,.jpg,.png"
+                :limit="1"
+                :auto-upload="false"
+                :show-file-list="false"
+                :on-exceed="handleExceed"
+                :on-change="onSucessUploadImg"
+              >
+                <template #trigger>
+                  <el-button :icon="PictureFilled" />
+                </template>
+              </el-upload>
             </template>
           </el-input>
         </div>
@@ -50,8 +73,9 @@
 <script>
 import { ref, onBeforeMount, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ElMessage, genFileId } from "element-plus";
 import { useUserStore } from "../stores/user";
+import { PictureFilled, InfoFilled } from "@element-plus/icons-vue";
 import { db } from "../../firebase";
 import {
   collection,
@@ -82,8 +106,48 @@ export default {
     const loading = ref(false)
     const containerLoading = ref(true)
     const scrollbox = ref(null)
+    const upload = ref()
 
     let initFlg = false;
+    let image = undefined
+
+    const handleExceed = (files) => {
+      const file = files[0]
+      file.uid = genFileId()
+      upload.value.handleStart(file)
+      console.log('sdsd')
+    }
+
+    const convertToBase64 = file => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    })
+
+    const onSucessUploadImg = async (file, files) => {
+      loading.value = true
+      try {
+        const base64 = await convertToBase64(file.raw)
+        const res = await addDoc(collection(db, "chats"), {
+          createdAt: new Date(),
+          roomId: toUser.value.roomId,
+          image: base64,
+          user: {
+            _id: user.email,
+            name: user.name,
+            avatar: user.avatar,
+          },
+        });
+        scrollbox.value.scrollTop = scrollbox.value.scrollHeight        
+      }
+      catch(e) {
+        console.error(e)
+      } 
+      finally {
+        loading.value = false
+      }
+    }
 
     const checkTimestamp = (a, b) => {
       if (a.data().createdAt > b.data().createdAt) {
@@ -112,8 +176,11 @@ export default {
             message: e.data().text,
             createdAt: e.data().createdAt.toDate(),
             roomId: e.data().roomId,
+            image: e.data().image
           };
         });
+
+      // msgBoard.value[0].imgSrc = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACMAAAAgCAMAAACvkzHFAAABblBMVEUAAAAAAP+AgP9VVf9AQP9mM8xVVdVJSdtAQN9VOeNNTeZGRuhVQOpOTutJSe1VRN1VR+NNQOZVSedMQuNSSeRQSOdTROlQSeJRQ+ROSOVNRuZRRuhPRONQReROROVNR+ZQRuZQR+NPRuNOReVRRedQSONORuVQReZPROZPReNNR+VQR+ROReZPR+RPReZOR+ZQRuZQRuRPReVQRuVPRuZOReZQR+ZQR+RORuVQReVOR+ZQRuRPRuVQR+RPRuVPR+VORuRORuVPRuZPReRPRuVOR+VPRuVOReVQR+ZPRuZPRuRPRuVPRuVQRuVPR+VPRuVORuVORuRQRuVPR+VPRuVPRuVPRuVPRuVQRuVPRuVPRuVQRuVPRuVPRuZORuRPRuVPReVPRuZPRuVPRuVORuVPR+VPRuVPRuVPRuVPRuVPRuZPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuVPRuX////xVqGrAAAAeHRSTlMAAQIDBAUGBwgJCgsMDQ4PEhQVGxwgIiMmJygsLTAxMjM2Nzs/QEVGR0pPVlxeZGVmaWttbm9wc3V2goaKkJKUmZyhoqSmp6mqq6yur7CxsrO2urzFxsfLzdbX2tvc3d7g5ufp6uvs7e7v8PHy8/T19vf4+fv8/f4WzLQ2AAAAAWJLR0R5odzU0AAAAYlJREFUGBmVwfdbklEcxuGPJmWWVGbGaJctWpYRlU1HDlAkW1aWNHgVscSU58/ve8756cXsurxv9uLI02rzzRWC7PjHt8P7aXPwvcx2Dufqhsx8J3H35VUTwL6v8m4SV1ZwBjit4BVxZQXXgHMKZokrKLgF9ETyHhLXuyhvFHNPzlKSNn0VOVESc2dZW6Xj7ND1TM4jvP5D/NOYzJ9L/E/yi0x0gZ0ypcbmfBZzV87GbYJMuflrNoNJ1WTqA0CyIW8EJ1WXqaWAKXlTmIq8VhZTlDcJRPIizHMFeUxd3k8gkvcD80JBHrMmbxWYlDeBqchrZTEz8qaBgUimlgYOrMsbwUnXZFZSmJPTK41iCnNDzuYQQWZmdb2YJqbnk8z3i+yuY1Rma5DdJV7KeYzT2X+Unfpey2kewwx9U6tygja9i/ImMHk5nw8TV1DwAOhek1cgbk7BdeC8ghJxcwrOAlkF48QNy6smgI4leTniut/JbOdwBn/LlLtok3yy3Fy4THBq7MNCPsEe/AWSl71coHcZgwAAAABJRU5ErkJggg=='
     };
 
     const sendMsg = async () => {
@@ -125,6 +192,7 @@ export default {
           createdAt: new Date(),
           roomId: toUser.value.roomId,
           text: chatMsg,
+          // image: image ? image : undefined,
           user: {
             _id: user.email,
             name: user.name,
@@ -199,6 +267,7 @@ export default {
                   message: change.doc.data().text,
                   createdAt: change.doc.data().createdAt.toDate(),
                   roomId: change.doc.data().roomId,
+                  image: change.doc.data().image
                 });
                 
               }
@@ -237,9 +306,13 @@ export default {
       loading,
       scrollbox,
       containerLoading,
+      PictureFilled,
+      InfoFilled,
       sendMsg,
       handleEnter,
       chooseMsgBox,
+      onSucessUploadImg,
+      handleExceed
     };
   },
 };
