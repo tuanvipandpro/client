@@ -14,7 +14,7 @@
         />
       </el-aside>
       <el-main class="main">
-        <el-card shadow="never">
+        <el-card shadow="never" class="header-chat">
           <template #header>
             <div style="display: flex; align-items: center; justify-content: space-between;">
               <div style="display: flex; align-items: center;">
@@ -295,6 +295,7 @@ export default {
         containerLoading.value = false
       } else {
         router.push('/')
+        // containerLoading.value = false
       }
     });
     
@@ -318,17 +319,23 @@ export default {
 };
 </script>
 
-<style scoped>
+<style lang="scss">
 .main {
-  padding: 5px;
+  padding: 5px !important;
 }
 .flex-board {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.header-chat{
+  .el-card__header {
+    background: #ABD9FF;
+  }
 }
 
 .userboard {
-  padding: 5px;
+  padding: 5px !important;
 }
 
 .msgbox {

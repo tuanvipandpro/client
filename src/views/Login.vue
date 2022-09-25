@@ -14,6 +14,7 @@
         </el-button>
       </div>
     </el-card>
+    <el-image style="width: 25vw; height: 50vh; margin-left: 5vw;" src="/background_img_1.png" :fit="fit" />
   </div>
 </template>
 <script setup>
