@@ -24,7 +24,18 @@
                   toUser.name || "None"
                 }}</strong>
               </div>
-              <el-button :icon="InfoFilled" text round style="font-size: 28px;"></el-button>
+              <el-popover placement="left" trigger="click">
+                <template #reference>
+                  <el-button :icon="InfoFilled" text round style="font-size: 28px;"></el-button>
+                </template>
+                <el-avatar
+                  :size="30"
+                  src="https://avatars.githubusercontent.com/u/72015883?v=4"
+                  style="margin-bottom: 8px"
+                />
+                <p>Name: {{toUser.name || "None"}}</p>
+                <p>Status : Active</p>
+              </el-popover>
             </div>
           </template>
           <div ref="scrollbox" style="height: 74vh; overflow-y: auto">
@@ -291,7 +302,7 @@ export default {
 
     onMounted(async () => {
       if (sessionStorage.getItem('user')) {
-        await init();
+        // await init();
         containerLoading.value = false
       } else {
         router.push('/')
