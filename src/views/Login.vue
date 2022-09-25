@@ -14,7 +14,7 @@
         </el-button>
       </div>
     </el-card>
-    <el-image style="width: 25vw; height: 50vh; margin-left: 5vw;" src="/background_img_1.png" :fit="fit" />
+    <el-image style="width: 25vw; height: 50vh; margin-left: 5vw;" :src="'https://firebasestorage.googleapis.com/v0/b/personalstrength-83af0.appspot.com/o/huy%20doan%2Fbackground_img_1.png?alt=media&token=5e7eeb0e-da8c-4eed-b159-faaa86ded152'" fit="fit" />
   </div>
 </template>
 <script setup>
