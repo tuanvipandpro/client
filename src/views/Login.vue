@@ -48,8 +48,12 @@ const googleLogin = async () => {
     }
 
     try {
-      await useUserStore().login(userObj)
-      router.push({name: 'Home'})
+      if(await useUserStore().login(userObj)) {
+        router.push({name: 'Home'})
+      } else {
+        ElMessage.error('The user is invalid !!')
+      }
+      
     } catch (e) {
       ElMessage.error('The user is invalid !!!')
       console.error(e)

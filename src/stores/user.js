@@ -26,7 +26,7 @@ export const useUserStore = defineStore('user', {
           firebaseToken: userObject.idToken
         }
       })
-      if (res.status === 200) {
+      if (res.status === 200 && res.data.roleId === 3) {
         this.token = res.data.token
         this.name = userObject.name
         this.email = userObject.email
