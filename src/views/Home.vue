@@ -24,17 +24,17 @@
                   toUser.name || "None"
                 }}</strong>
               </div>
-              <el-popover placement="left" trigger="click">
+              <el-popover placement="left" trigger="click" @before-enter="showPopover">
                 <template #reference>
                   <el-button :icon="InfoFilled" text round style="font-size: 28px;"></el-button>
                 </template>
                 <el-avatar
                   :size="30"
-                  src="https://avatars.githubusercontent.com/u/72015883?v=4"
+                  :src="popoverData.image"
                   style="margin-bottom: 8px"
                 />
-                <p>Name: {{toUser.name || "None"}}</p>
-                <p>Status : Active</p>
+                <p>Name: {{popoverData.name || "None"}}</p>
+                <p>Status : {{ popoverData.isActive ? 'Online' : 'Offline' }}</p>
               </el-popover>
             </div>
           </template>
@@ -118,6 +118,7 @@ export default {
     const containerLoading = ref(true)
     const scrollbox = ref(null)
     const upload = ref()
+    const popoverData = ref({})
 
     let initFlg = false;
     let image = undefined
@@ -252,6 +253,24 @@ export default {
       return res.data;
     };
 
+    const getStatusForUser = async () => {
+      const res = await axios.get(
+        `https://release-mto.herokuapp.com/api/sys_users/${user.id}/chat_info
+        `,
+        {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        }
+      );
+      return res.data;
+    };
+
+    const showPopover = async () => {
+      const status = await getStatusForUser()
+      popoverData.value = status
+    }
+
     const init = async () => {
       const res = await getRoomByConnectorId();
       // roomId.value = res.data[0].roomId;
@@ -302,7 +321,7 @@ export default {
 
     onMounted(async () => {
       if (sessionStorage.getItem('user')) {
-        // await init();
+        await init();
         containerLoading.value = false
       } else {
         router.push('/')
@@ -318,8 +337,10 @@ export default {
       loading,
       scrollbox,
       containerLoading,
+      popoverData,
       PictureFilled,
       InfoFilled,
+      showPopover,
       sendMsg,
       handleEnter,
       chooseMsgBox,
