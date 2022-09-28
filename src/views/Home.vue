@@ -265,7 +265,7 @@ export default {
 
     const getStatusForUser = async () => {
       const res = await axios.get(
-        `https://release-mto.herokuapp.com/api/sys_users/${user.id}/chat_info
+        `https://release-mto.herokuapp.com/api/sys_users/${toUser.value.studentId}/chat_info
         `,
         {
           headers: {
