@@ -41,10 +41,16 @@
           <div ref="scrollbox" style="height: 74vh; overflow-y: auto">
             <template v-for="(msg, index) in msgBoard" :key="index">
               <div v-if="msg.image" :class="!msg.isYou ? 'msgbox' : 'msgbox isRight' ">
-                <el-image style="width: 100px; height: 100px" :src="msg.image" :preview-src-list="[msg.imgSrc]" fit="fill" />
+                <el-image style="width: 100px; height: 100px" :src="msg.image" :preview-src-list="[msg.image]" fit="fill" />
               </div>
-              <div v-else-if="!msg.isYou" class="msgbox">{{ msg.message }}</div>
-              <div v-else class="msgbox isRight">{{ msg.message }}</div>
+              <div v-else-if="!msg.isYou" class="msgbox">
+                {{ msg.message }} 
+                <div style="font-size: 8.2px; font-weight: 700;">{{ convertDate(msg.createdAt) }}</div>
+              </div>
+              <div v-else class="msgbox isRight">
+                {{ msg.message }}
+                <div style="font-size: 8.2px; font-weight: 700;">{{ convertDate(msg.createdAt) }}</div>
+              </div>
             </template>
           </div>
         </el-card>
@@ -82,10 +88,10 @@
   </div>
 </template>
 <script>
-import { ref, onBeforeMount, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, genFileId } from "element-plus";
-import { useUserStore } from "../stores/user";
+import moment from "moment"
 import { PictureFilled, InfoFilled } from "@element-plus/icons-vue";
 import { db } from "../../firebase";
 import {
@@ -136,6 +142,10 @@ export default {
         reader.onload = () => resolve(reader.result);
         reader.onerror = error => reject(error);
     })
+
+    const convertDate = (date) => {
+      return moment(date).format('DD/MM HH:mm')
+    }
 
     const onSucessUploadImg = async (file, files) => {
       loading.value = true
@@ -340,6 +350,7 @@ export default {
       popoverData,
       PictureFilled,
       InfoFilled,
+      convertDate,
       showPopover,
       sendMsg,
       handleEnter,
