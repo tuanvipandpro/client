@@ -6,12 +6,13 @@ import { getFirestore } from  "firebase/firestore"
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyC12gmgDFzcKwndKxh9AhqpECU_sdG0QOY",
-  authDomain: "personalstrength-83af0.firebaseapp.com",
-  projectId: "personalstrength-83af0",
-  storageBucket: "personalstrength-83af0.appspot.com",
-  messagingSenderId: "402774877493",
-  appId: "1:402774877493:web:262d650143cf2cc70d187c"
+  apiKey: "AIzaSyCxbFC06jOjEKu6ASsUtlj9-2xcIeUIFRY",
+  authDomain: "messenger-test-5c22f.firebaseapp.com",
+  projectId: "messenger-test-5c22f",
+  storageBucket: "messenger-test-5c22f.appspot.com",
+  messagingSenderId: "954358099052",
+  appId: "1:954358099052:web:493c34423aba316a6abc49",
+  measurementId: "G-2WG3242RD5"
 };
 
 // Initialize Firebase
